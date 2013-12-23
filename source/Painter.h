@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <QMatrix4x4>
@@ -86,3 +85,4 @@ protected:
     GLuint m_depthFbo;
     GLuint m_depthTex;
 };
+

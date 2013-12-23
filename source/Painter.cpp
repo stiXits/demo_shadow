@@ -1,4 +1,3 @@
-
 #include <cassert>
 
 #include <QKeyEvent>
@@ -76,8 +75,8 @@ bool Painter::initialize()
 {
     initializeOpenGLFunctions();
 
-    // Note: As always, feel free to change/modify parameters .. as long as its possible to 
-    // see the terrain and navigation basically works, everything is ok. 
+    // Note: As always, feel free to change/modify parameters .. as long as its possible to
+    // see the terrain and navigation basically works, everything is ok.
 
     glClearColor(1.f, 1.f, 1.f, 0.f);
 
@@ -96,19 +95,19 @@ bool Painter::initialize()
     m_programs[PaintMode1] = program;
     program->bindAttributeLocation("a_vertex", 0);
     program->bindAttributeLocation("a_normal", 1);
-    program->bindAttributeLocation("a_texc", 2);    
+    program->bindAttributeLocation("a_texc", 2);
     program->link();
 
     // load labeling shaders and resources
 
     m_programs[LabelAlphaMappingProgram]  = createBasicShaderProgram("data/label.vert", "data/labelAM.frag");
     m_programs[LabelDistanceMapProgram] = createBasicShaderProgram("data/label.vert", "data/labelDM.frag");
-    
+
     m_hpicgsLabelAM = FileAssociatedTexture::getOrCreate2D("data/hpicgs_label.png", *this);
     m_portccLabelAM = FileAssociatedTexture::getOrCreate2D("data/companion_cube_label.png", *this);
 
-    // load and position 3d models in the scene 
-    // Note: feel free to modify / add / remove here... there should be at least 
+    // load and position 3d models in the scene
+    // Note: feel free to modify / add / remove here... there should be at least
     // a few scene objects visible ;)
 
     m_hpicgs = new AssimpScene(*this, "data/hpicgs.obj", true);
@@ -128,19 +127,20 @@ bool Painter::initialize()
 
     // Task_3_1 - ToDo Begin
 
-    // Modify the transformation matrix T to position, scale, and orient 
+    // Modify the transformation matrix T to position, scale, and orient
     // the labels to appropriate places, based on the initial view! No
     // interaction should be required to be able to see both labels.
 
     m_hpicgsLabel = new ScreenAlignedQuad(*this, 0);
     QMatrix4x4 T;
-
+    T.translate(0.5, 0.5, -1.0);
+    T.scale(1.0, 0.3);
     // ToDo: use T.translate/scale/rotate ...
 
     m_transforms << T;
 
     m_portccLabel = new ScreenAlignedQuad(*this, 0);
-
+    T.translate(-1.5, 0.0, 2.0);
     // ToDo: use T.translate/scale/rotate ...
 
     m_transforms << T;
@@ -164,7 +164,7 @@ bool Painter::initialize()
 
     glGenTextures(1, &m_hpicgsLabelDM);
     glBindTexture(GL_TEXTURE_2D, m_hpicgsLabelDM);
-        
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -193,9 +193,9 @@ bool Painter::initialize()
         // ToDo: pre resize?
         // image = image.scaled(? , ? , Qt::FastTransformation);
 
-        DistanceTransform DT(image, 512, 128, 0.0625f);
+        DistanceTransform DT(image, 512, 128, 0.125f);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 512, 128, 0, GL_RED, GL_FLOAT, DT.data());
-    }        
+    }
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -208,10 +208,12 @@ bool Painter::initialize()
     glBindTexture(GL_TEXTURE_2D, m_depthTex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, ShadowMapSize, ShadowMapSize, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    float color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glGenFramebuffers(1, &m_depthFbo);
@@ -466,8 +468,13 @@ void Painter::paint_3_3_shadowmap(float timef)
     // Task_3_3 - ToDo Begin
 
     QMatrix4x4 L;
+    QVector3D light = m_light.normalized();
+    QVector3D center(0.0, 0.0, 0.0);
+    QVector3D up = QVector3D::crossProduct(QVector3D::crossProduct(light - center, QVector3D(0.0, 1.0, 0.0)), light - center);
 
-    // L ...
+    L.perspective(camera()->fovy(), camera()->viewport().width()/static_cast<float>(camera()->viewport().height()), camera()->zNear(), camera()->zFar());
+//    L.lookAt(light, center ,up);
+    L.lookAt(m_light,QVector3D(0.f,0.f,0.f),QVector3D(0.f,0.1f,0.f));
 
     // Task_3_3 - ToDo End
 
@@ -514,12 +521,16 @@ void Painter::paint_3_4(float timef)
 
 
     // Task_3_3 - ToDo Begin
-
+    QVector3D light = m_light.normalized();
+    QMatrix4x4 L;
+//    L.lookAt(light, center ,up);
+L.perspective(camera()->fovy(), camera()->viewport().width()/static_cast<float>(camera()->viewport().height()), camera()->zNear(), camera()->zFar());
+    L.lookAt(m_light,QVector3D(0.0,0.0,0.0),QVector3D(0.0,0.1,0.0));
     // QMatrix4x4 ...
-    
+
     program->bind();
     program->setUniformValue("light", m_light);
-    // program->setUniformValue("todo", ?);
+    program->setUniformValue("viewProjection", L);
     program->release();
 
     // Task_3_3 - ToDo End

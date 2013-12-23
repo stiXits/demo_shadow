@@ -3,7 +3,7 @@
 #include <cassert>
 
 #include <QFileInfo>
-#include <qDebug>
+#include <QDebug>
 #include <QMatrix4x4>
 #include <QOpenGLShaderProgram>
 
@@ -227,7 +227,7 @@ inline void AssimpScene::retrieveColor(
 ,   const float r
 ,   const float g
 ,   const float b
-,   const float a) 
+,   const float a)
 {
     aiColor4D acolor;
     if (AI_SUCCESS == aiGetMaterialColor(mtl, pKey, type, index, &acolor))
@@ -277,7 +277,7 @@ void AssimpScene::draw(
         if (mesh->material.texCount > 0)
         {
             program.setUniformValue("difftex", 0);
-            gl.glActiveTexture(GL_TEXTURE0);            
+            gl.glActiveTexture(GL_TEXTURE0);
             gl.glBindTexture(GL_TEXTURE_2D, mesh->material.texture);
         }
 

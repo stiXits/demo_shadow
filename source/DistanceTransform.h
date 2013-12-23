@@ -2,6 +2,7 @@
 #pragma once
 
 #include <QSize>
+#include <QVector>
 
 // Signed Euclidean Distance Transform
 
@@ -20,6 +21,9 @@ public:
 protected:
 
     void sedt(unsigned char threshold);
+    int sp(int x, int y);
+    int tp(int x, int y);
+    void p(int x, int y, int v);
 
 protected:
     const QImage m_source;
@@ -28,4 +32,6 @@ protected:
     const float m_distScale;
 
     float * m_sedt;
+    QVector<int> m_values;
+    QVector<int> m_borderPoints;
 };
